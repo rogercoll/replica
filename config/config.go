@@ -86,10 +86,8 @@ func (c *Config) LoadConfigData(data []byte) error {
 
 		switch name {
 		case "backup":
-			fmt.Println("Backup found")
 			for pluginName, pluginVal := range subTable.Fields {
 				switch pluginSubTable := pluginVal.(type) {
-				// legacy [inputs.cpu] support
 				case *ast.Table:
 					if err = c.addBackup(pluginName, pluginSubTable); err != nil {
 						return fmt.Errorf("error parsing %s, %w", pluginName, err)

@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/rogercoll/replica/config"
-	"github.com/rogercoll/replica/plugins/backup"
 )
 
 // Controller runs a set of plugins.
@@ -29,19 +28,35 @@ func (c *Controller) Run(ctx context.Context) error {
 	//all backupfilters must be different to prevent data race
 	fmt.Println(len(c.Config.Backups))
 	backupFiles := make(map[string][]*os.File, len(c.Config.Backups))
-	for _, bckName := range c.Config.Backups {
+	for _, running := range c.Config.Backups {
 		//create logger with with filed of the backup name
 		wg.Add(1)
 		//contoller could have already consumed them
 		go func() {
 			defer wg.Done()
-			creator := backup.Backups[bckName.Name]
-			bck := creator()
-			files, err := bck.Do()
+			files, err := running.Backup.Do()
 			if err != nil {
 				log.Println(err)
 			}
-			backupFiles[bckName.Name] = files
+			backupFiles[running.Name] = files
+		}()
+	}
+	wg.Wait()
+	for _, running := range c.Config.Auths {
+		fmt.Println(running)
+		//create logger with with filed of the backup name
+		wg.Add(1)
+		//contoller could have already consumed them
+		go func() {
+			defer wg.Done()
+			for k, files := range backupFiles {
+				fmt.Println("helkjfjejfe")
+				sBytes, err := running.Auth.Save(files)
+				if err != nil {
+					log.Println(err)
+				}
+				fmt.Printf("Backup: [%s] Saved bytes[%s]\n", k, sBytes)
+			}
 		}()
 	}
 	wg.Wait()

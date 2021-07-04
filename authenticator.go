@@ -1,8 +1,8 @@
 package replica
 
-import "io"
+import "os"
 
 type Authenticator interface {
 	PluginDescriber
-	Save(io.Writer) error
+	Save([]*os.File) (int64, error)
 }
