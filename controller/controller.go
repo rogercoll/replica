@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/rogercoll/replica/config"
+	"github.com/rogercoll/replica/models"
 )
 
 // Controller runs a set of plugins.
@@ -34,8 +35,9 @@ func (c *Controller) Run(ctx context.Context) error {
 			files, err := running.Backup.Do()
 			if err != nil {
 				log.Println(err)
+			} else {
+				backupFiles[running.Name] = files
 			}
-			backupFiles[running.Name] = files
 		}()
 	}
 	wg.Wait()
@@ -43,16 +45,17 @@ func (c *Controller) Run(ctx context.Context) error {
 		//create logger with with filed of the backup name
 		wg.Add(1)
 		//contoller could have already consumed them
-		go func() {
+		go func(r *models.RunningDistributor) {
 			defer wg.Done()
 			for k, files := range backupFiles {
-				sBytes, err := running.Dist.Save(files)
+				sBytes, err := r.Dist.Save(files)
 				if err != nil {
-					log.Println(err)
+					r.Log.Error(err)
+				} else {
+					r.Log.Printf("Backup: [%s] Saved bytes: [%d]\n", k, sBytes)
 				}
-				log.Printf("Backup: [%s] Saved bytes: [%d]\n", k, sBytes)
 			}
-		}()
+		}(running)
 	}
 	wg.Wait()
 	return nil

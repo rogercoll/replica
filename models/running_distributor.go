@@ -8,13 +8,14 @@ import (
 type RunningDistributor struct {
 	Dist replica.Distributor
 	Name string
-	log  *logrus.Entry
+	Log  *logrus.Entry
 }
 
 func NewRunningDistributor(name string, dist replica.Distributor) *RunningDistributor {
 	logger := logrus.New().WithFields(logrus.Fields{"distributor": name})
 	return &RunningDistributor{
 		Dist: dist,
-		log:  logger,
+		Log:  logger,
+		Name: name,
 	}
 }
