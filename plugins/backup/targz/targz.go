@@ -38,20 +38,19 @@ func (t *TarGz) Description() string {
 	return "Generate Tar Gz files for given paths"
 }
 
-func (t *TarGz) Do() ([]*os.File, error) {
-	var backups []*os.File
-	fmt.Println(t.Paths)
+func (t *TarGz) Do() ([]string, error) {
+	var backups []string
 	for _, aPath := range t.Paths {
-		fmt.Println("Making backup of a file")
 		body, err := ioutil.ReadFile(aPath)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		outputName := path.Base(aPath) + "-" + time.Now().Format(t.TimeFormat)
-		file, err := ioutil.TempFile("/tmp", outputName)
+		file, err := os.Create("/tmp/" + outputName)
 		if err != nil {
 			log.Fatal(err)
 		}
+		defer file.Close()
 		writer, err := gzip.NewWriterLevel(file, gzip.BestCompression)
 		if err != nil {
 			log.Fatalln(err)
@@ -67,13 +66,13 @@ func (t *TarGz) Do() ([]*os.File, error) {
 				Size: int64(len(body)),
 			}
 			if err := tw.WriteHeader(hdr); err != nil {
-				println(err)
+				fmt.Println(err)
 			}
 			if _, err := tw.Write(body); err != nil {
-				println(err)
+				fmt.Println(err)
 			}
 		}
-		backups = append(backups, file)
+		backups = append(backups, file.Name())
 	}
 	return backups, nil
 }

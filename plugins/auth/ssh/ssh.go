@@ -1,8 +1,6 @@
 package ssh
 
 import (
-	"os"
-
 	"github.com/rogercoll/replica"
 	"github.com/rogercoll/replica/plugins/auth"
 )
@@ -30,7 +28,7 @@ func (s *SSH) Description() string {
 	return "Connect via SSH and copy files via SCP"
 }
 
-func (s *SSH) Save([]*os.File) (int64, error) {
+func (s *SSH) Save([]string) (int64, error) {
 	return 0, nil
 }
 

@@ -35,16 +35,20 @@ func (l *Local) Description() string {
 	return "Store backupfiles to a local directory"
 }
 
-func (l *Local) Save(files []*os.File) (int64, error) {
+func (l *Local) Save(files []string) (int64, error) {
 	var total int64
 	for _, file := range files {
-		newFile, err := os.Create(l.Destination + path.Base(file.Name()))
+		newFile, err := os.Create(l.Destination + path.Base(file))
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer newFile.Close()
-
-		bytesCopied, err := io.Copy(newFile, file)
+		oldFile, err := os.Open(file)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer oldFile.Close()
+		bytesCopied, err := io.Copy(newFile, oldFile)
 		if err != nil {
 			log.Fatal(err)
 		}
