@@ -7,7 +7,7 @@ import (
 	"path"
 
 	"github.com/rogercoll/replica"
-	"github.com/rogercoll/replica/plugins/auth"
+	"github.com/rogercoll/replica/plugins/distributors"
 )
 
 var (
@@ -58,7 +58,7 @@ func (l *Local) Save(files []string) (int64, error) {
 }
 
 func init() {
-	auth.Add("local", func() replica.Authenticator {
+	distributors.Add("local", func() replica.Distributor {
 		return &Local{Destination: defaultDestination}
 	})
 }

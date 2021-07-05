@@ -39,14 +39,14 @@ func (c *Controller) Run(ctx context.Context) error {
 		}()
 	}
 	wg.Wait()
-	for _, running := range c.Config.Auths {
+	for _, running := range c.Config.Distributors {
 		//create logger with with filed of the backup name
 		wg.Add(1)
 		//contoller could have already consumed them
 		go func() {
 			defer wg.Done()
 			for k, files := range backupFiles {
-				sBytes, err := running.Auth.Save(files)
+				sBytes, err := running.Dist.Save(files)
 				if err != nil {
 					log.Println(err)
 				}

@@ -8,15 +8,15 @@ import (
 
 	"github.com/rogercoll/replica/config"
 	"github.com/rogercoll/replica/controller"
-	_ "github.com/rogercoll/replica/plugins/auth/all"
 	_ "github.com/rogercoll/replica/plugins/backup/all"
+	_ "github.com/rogercoll/replica/plugins/distributors/all"
 )
 
 var fSampleConfig = flag.Bool("sample-config", false,
 	"print out full sample configuration")
 
-var fAuthFilters = flag.String("auth-filter", "",
-	"filter the authorizators to enable, separator is :")
+var fDistFilters = flag.String("dist-filter", "",
+	"filter the distributors to enable, separator is :")
 
 var fBckFilters = flag.String("bck-filter", "",
 	"filter the backups to enable, separator is :")
@@ -24,7 +24,7 @@ var fBckFilters = flag.String("bck-filter", "",
 var fConfig = flag.String("config", "",
 	"configuration file path")
 
-func runReplica(authFilters, backupFilters []string) {
+func runReplica(distFilters, backupFilters []string) {
 	version := "v0.0.1"
 	log.Printf("I! Starting Replica %s", version)
 
@@ -46,21 +46,21 @@ func runReplica(authFilters, backupFilters []string) {
 
 func main() {
 	flag.Parse()
-	authFilters, bckFilters := []string{}, []string{}
+	distFilters, bckFilters := []string{}, []string{}
 
-	if *fAuthFilters != "" {
-		authFilters = strings.Split(strings.TrimSpace(*fAuthFilters), ":")
+	if *fDistFilters != "" {
+		distFilters = strings.Split(strings.TrimSpace(*fDistFilters), ":")
 	}
 	if *fBckFilters != "" {
 		bckFilters = strings.Split(strings.TrimSpace(*fBckFilters), ":")
 	}
 	switch {
 	case *fSampleConfig:
-		config.PrintSampleConfig(bckFilters, authFilters)
+		config.PrintSampleConfig(bckFilters, distFilters)
 		return
 	}
 	run(
-		authFilters,
+		distFilters,
 		bckFilters,
 	)
 }

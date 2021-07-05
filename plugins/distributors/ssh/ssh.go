@@ -2,7 +2,7 @@ package ssh
 
 import (
 	"github.com/rogercoll/replica"
-	"github.com/rogercoll/replica/plugins/auth"
+	"github.com/rogercoll/replica/plugins/distributors"
 )
 
 type SSH struct {
@@ -33,7 +33,7 @@ func (s *SSH) Save([]string) (int64, error) {
 }
 
 func init() {
-	auth.Add("ssh", func() replica.Authenticator {
+	distributors.Add("ssh", func() replica.Distributor {
 		return &SSH{}
 	})
 }

@@ -11,6 +11,10 @@ build:
 	@echo "  >  Building binary..."
 	go build $(LDFLAGS) ./cmd/replica
 
+## print-filters: Print filters
+print-plugins:
+	./replica -sample-config -dist-filter "ssh:local" -bck-filter "targz"
+
 ## buildimage: Build docker image
 buildimage:
 	@echo "  >  Building docker image..."

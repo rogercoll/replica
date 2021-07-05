@@ -11,23 +11,23 @@ import (
 	"github.com/naoina/toml/ast"
 	"github.com/rogercoll/replica"
 	"github.com/rogercoll/replica/models"
-	"github.com/rogercoll/replica/plugins/auth"
 	"github.com/rogercoll/replica/plugins/backup"
+	"github.com/rogercoll/replica/plugins/distributors"
 )
 
 type Config struct {
 	toml          *toml.Config
-	AuthFilters   []string
+	DistFilters   []string
 	BackupFilters []string
-	Auths         []*models.RunningAuthenticator
+	Distributors  []*models.RunningDistributor
 	Backups       []*models.RunningBackup
 }
 
 func NewConfig() *Config {
 	return &Config{
-		AuthFilters:   make([]string, 0),
+		DistFilters:   make([]string, 0),
 		BackupFilters: make([]string, 0),
-		Auths:         make([]*models.RunningAuthenticator, 0),
+		Distributors:  make([]*models.RunningDistributor, 0),
 		Backups:       make([]*models.RunningBackup, 0),
 	}
 }
@@ -103,17 +103,17 @@ func (c *Config) LoadConfigData(data []byte) error {
 						pluginName)
 				}
 			}
-		case "auth":
+		case "distributor":
 			for pluginName, pluginVal := range subTable.Fields {
 				switch pluginSubTable := pluginVal.(type) {
 				// legacy [inputs.cpu] support
 				case *ast.Table:
-					if err = c.addAuth(pluginName, pluginSubTable); err != nil {
+					if err = c.addDistributor(pluginName, pluginSubTable); err != nil {
 						return fmt.Errorf("error parsing %s, %w", pluginName, err)
 					}
 				case []*ast.Table:
 					for _, t := range pluginSubTable {
-						if err = c.addAuth(pluginName, t); err != nil {
+						if err = c.addDistributor(pluginName, t); err != nil {
 							return fmt.Errorf("error parsing %s, %w", pluginName, err)
 						}
 					}
@@ -145,27 +145,27 @@ func (c *Config) addBackup(name string, table *ast.Table) error {
 	return nil
 }
 
-func (c *Config) addAuth(name string, table *ast.Table) error {
-	if len(c.AuthFilters) > 0 && !sliceContains(name, c.AuthFilters) {
+func (c *Config) addDistributor(name string, table *ast.Table) error {
+	if len(c.DistFilters) > 0 && !sliceContains(name, c.DistFilters) {
 		return nil
 	}
-	creator, ok := auth.Auths[name]
+	creator, ok := distributors.Distributors[name]
 	if !ok {
-		return fmt.Errorf("Undefined but requested auth: %s", name)
+		return fmt.Errorf("Undefined but requested distributor: %s", name)
 	}
-	auth := creator()
-	if err := c.toml.UnmarshalTable(table, auth); err != nil {
+	dist := creator()
+	if err := c.toml.UnmarshalTable(table, dist); err != nil {
 		return err
 	}
 
-	rp := models.NewRunningAuthenticator(name, auth)
-	c.Auths = append(c.Auths, rp)
+	rp := models.NewRunningDistributor(name, dist)
+	c.Distributors = append(c.Distributors, rp)
 	return nil
 }
 
-var authHeader = `
+var distHeader = `
 ###############################################################################
-#                            AUTH PLUGINS                                    #
+#                            DISTRIBUTOR PLUGINS                              #
 ###############################################################################
 `
 
@@ -176,7 +176,7 @@ var bckHeader = `
 `
 
 // PrintSampleConfig prints the sample config
-func PrintSampleConfig(bckFilters, authFilters []string) {
+func PrintSampleConfig(bckFilters, distFilters []string) {
 	if len(bckFilters) > 0 {
 		fmt.Printf(bckHeader)
 		for _, filter := range bckFilters {
@@ -187,15 +187,15 @@ func PrintSampleConfig(bckFilters, authFilters []string) {
 	} else {
 		fmt.Println("No Backup filters found")
 	}
-	if len(authFilters) > 0 {
-		fmt.Printf(authHeader)
-		for _, filter := range authFilters {
-			creator := auth.Auths[filter]
-			auth := creator()
-			printConfig(filter, auth, "auths", false)
+	if len(distFilters) > 0 {
+		fmt.Printf(distHeader)
+		for _, filter := range distFilters {
+			creator := distributors.Distributors[filter]
+			dist := creator()
+			printConfig(filter, dist, "distributor", false)
 		}
 	} else {
-		fmt.Println("No Auth filters found")
+		fmt.Println("No Distributor filters found")
 	}
 }
 
