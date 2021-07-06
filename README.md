@@ -56,4 +56,16 @@ Example file:
   destinations = ["/home/pi/extBackups/"]
 ```
 
+The file [plugins](./Plugins.md) contains additional information on how to check and get a sample configuration for each available plugin.
+
+## How to use it?
+
+Once a configuration file has been defined with the desired plugins, you can simple run it:
+
+```bash
+replica
+```
+
+The best would be to add the execution as a cron job, thus automatically make and replicate backups when needed.
+
 **The program workflow is based on [Telegraf](https://github.com/influxdata/telegraf) agent, kudos to them for the great work!**
