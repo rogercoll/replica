@@ -2,25 +2,32 @@ package ssh
 
 import (
 	"errors"
-	"io"
+	"fmt"
+	"net"
 	"os"
+	"path"
 	"strings"
 
+	"github.com/pkg/sftp"
 	"github.com/rogercoll/replica"
 	"github.com/rogercoll/replica/plugins/distributors"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 )
 
 type SSH struct {
-	Hosts     []string `toml:"hosts"`
-	Passwords []string `toml:"passwords"`
+	Hosts        []string `toml:"hosts"`
+	Passwords    []string `toml:"passwords"`
+	Destinations []string `toml:"destinations"`
 }
 
 const sampleConfig = `
   ## Replicate files via SSH
   # This is expected to be the list of ssh config made of hostIP, port and user to do the replication, eg: "192.168.1.90:22:bob"
   hosts = []
-  # Password to use with the corresponding config, if empty will use the loaded ssh keys
+  # Password to use with the corresponding config, if empty will use the loaded ssh keys with the system SSH Agent
+  usernames = []
+  # Backup remote destinations of the corresponding config
   usernames = []
 `
 
@@ -34,44 +41,64 @@ func (s *SSH) Description() string {
 	return "Connect via SSH and copy files via SCP"
 }
 
+func parsePath(path string) string {
+	return strings.Replace(path, "//", "/", -1)
+}
+
 func (s *SSH) Save(files []string) (int64, error) {
 	var totalBytes int64
+	if len(s.Hosts) != len(s.Destinations) {
+		return 0, errors.New("Invalid configuration")
+	}
 	for i, c := range s.Hosts {
 		config := strings.Split(c, ":")
 		if len(config) != 3 {
 			return 0, errors.New("Invalid host format")
 		}
+		auths := []ssh.AuthMethod{}
+		if s.Passwords[i] == "" {
+			if sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
+				fmt.Println("get sock")
+				auths = append(auths, ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers))
+				defer sshAgent.Close()
+			}
+		} else {
+			auths = append(auths, ssh.Password(s.Passwords[i]))
+		}
 		clientConfig := &ssh.ClientConfig{
-			User: config[2],
-			Auth: []ssh.AuthMethod{
-				ssh.Password(s.Passwords[i]),
-			},
+			User:            config[2],
+			Auth:            auths,
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		}
 		client, err := ssh.Dial("tcp", config[0]+":"+config[1], clientConfig)
 		if err != nil {
 			return 0, err
 		}
-		session, err := client.NewSession()
+		// open an SFTP session over an existing ssh connection.
+		sftp, err := sftp.NewClient(client)
 		if err != nil {
 			return 0, err
 		}
-		defer session.Close()
-		r, err := session.StdoutPipe()
-		if err != nil {
-			return 0, err
-		}
-
+		defer sftp.Close()
 		for _, fileName := range files {
-			file, err := os.Open(fileName)
+			// Open the source file
+			srcFile, err := os.Open(parsePath(fileName))
 			if err != nil {
 				return 0, err
 			}
-			defer file.Close()
-			n, err := io.Copy(file, r)
+			defer srcFile.Close()
+
+			// Create the destination file
+			dstFile, err := sftp.Create(parsePath(s.Destinations[i] + path.Base(fileName)))
 			if err != nil {
 				return 0, err
 			}
-			if err := session.Wait(); err != nil {
+			defer dstFile.Close()
+
+			// write to file
+			n, err := dstFile.ReadFrom(srcFile)
+			if err != nil {
+				fmt.Println("heldfjasjfkldas")
 				return 0, err
 			}
 			totalBytes += n
