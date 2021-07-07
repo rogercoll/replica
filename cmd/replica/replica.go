@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
 	"strings"
 
 	"github.com/rogercoll/replica/config"
 	"github.com/rogercoll/replica/controller"
 	_ "github.com/rogercoll/replica/plugins/backup/all"
 	_ "github.com/rogercoll/replica/plugins/distributors/all"
+	"github.com/sirupsen/logrus"
 )
 
 var fSampleConfig = flag.Bool("sample-config", false,
@@ -24,12 +24,21 @@ var fBckFilters = flag.String("bck-filter", "",
 var fConfig = flag.String("config", "",
 	"configuration file path")
 
+const (
+	version = "v0.0.1"
+)
+
+var log = logrus.New()
+
+func init() {
+	log.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
+}
+
 func runReplica(distFilters, backupFilters []string) {
-	version := "v0.0.1"
-	log.Printf("I! Starting Replica %s", version)
+	log.WithFields(logrus.Fields{"version": version}).Info("Starting Replica!")
 
 	// If no other options are specified, load the config file and run.
-	c := config.NewConfig()
+	c := config.NewConfig(log.WithFields(logrus.Fields{"version": version}))
 	err := c.LoadConfig(*fConfig)
 	if err != nil {
 		log.Fatal(err)

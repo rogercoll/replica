@@ -11,8 +11,8 @@ type RunningDistributor struct {
 	Log  *logrus.Entry
 }
 
-func NewRunningDistributor(name string, dist replica.Distributor) *RunningDistributor {
-	logger := logrus.New().WithFields(logrus.Fields{"distributor": name})
+func NewRunningDistributor(name string, dist replica.Distributor, log *logrus.Entry) *RunningDistributor {
+	logger := log.WithFields(logrus.Fields{"distributor": name})
 	return &RunningDistributor{
 		Dist: dist,
 		Log:  logger,

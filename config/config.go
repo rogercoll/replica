@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
@@ -13,20 +12,23 @@ import (
 	"github.com/rogercoll/replica/models"
 	"github.com/rogercoll/replica/plugins/backup"
 	"github.com/rogercoll/replica/plugins/distributors"
+	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
 	toml          *toml.Config
+	log           *logrus.Entry
 	DistFilters   []string
 	BackupFilters []string
 	Distributors  []*models.RunningDistributor
 	Backups       []*models.RunningBackup
 }
 
-func NewConfig() *Config {
+func NewConfig(_log *logrus.Entry) *Config {
 	return &Config{
 		DistFilters:   make([]string, 0),
 		BackupFilters: make([]string, 0),
+		log:           _log,
 		Distributors:  make([]*models.RunningDistributor, 0),
 		Backups:       make([]*models.RunningBackup, 0),
 	}
@@ -43,7 +45,6 @@ func getDefaultConfigPath() (string, error) {
 	etcfile := "/etc/replica/replica.conf"
 	for _, path := range []string{envfile, homefile, etcfile} {
 		if _, err := os.Stat(path); err == nil {
-			log.Printf("I! Using config file: %s", path)
 			return path, nil
 		}
 	}
@@ -59,6 +60,7 @@ func (c *Config) LoadConfig(path string) error {
 		if path, err = getDefaultConfigPath(); err != nil {
 			return err
 		}
+		c.log.WithFields(logrus.Fields{"path": path}).Info("I! Using config file")
 	}
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -140,7 +142,7 @@ func (c *Config) addBackup(name string, table *ast.Table) error {
 		return err
 	}
 
-	rp := models.NewRunningBackup(name, bck)
+	rp := models.NewRunningBackup(name, bck, c.log)
 	c.Backups = append(c.Backups, rp)
 	return nil
 }
@@ -158,7 +160,7 @@ func (c *Config) addDistributor(name string, table *ast.Table) error {
 		return err
 	}
 
-	rp := models.NewRunningDistributor(name, dist)
+	rp := models.NewRunningDistributor(name, dist, c.log)
 	c.Distributors = append(c.Distributors, rp)
 	return nil
 }

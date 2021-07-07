@@ -58,7 +58,6 @@ func (s *SSH) Save(files []string) (int64, error) {
 		auths := []ssh.AuthMethod{}
 		if s.Passwords[i] == "" {
 			if sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK")); err == nil {
-				fmt.Println("get sock")
 				auths = append(auths, ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers))
 				defer sshAgent.Close()
 			}

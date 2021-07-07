@@ -11,11 +11,11 @@ type RunningBackup struct {
 	log    *logrus.Entry
 }
 
-func NewRunningBackup(name string, backup replica.Backup) *RunningBackup {
-	logger := logrus.New().WithFields(logrus.Fields{"backup": name})
+func NewRunningBackup(name string, backup replica.Backup, _log *logrus.Entry) *RunningBackup {
+	_log.WithFields(logrus.Fields{"backup": name})
 	return &RunningBackup{
 		Backup: backup,
 		Name:   name,
-		log:    logger,
+		log:    _log,
 	}
 }
