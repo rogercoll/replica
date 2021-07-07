@@ -21,8 +21,8 @@ And the corresponding output:
 
 # Generate Tar Gz files for given paths
 [[backup.targz]]
-  ## Create Tar Gz files for given paths (files or directories)
-  # This is expected to be the list of absolute host path
+  ## Create Tar Gz files for given paths (directories)
+  # This is expected to be the list of absolute host path directories
   paths = []
   # Time format to be used in the backup file names (https://golang.org/pkg/time/#Time)
   # Default is layoutISO = "2006-01-02"

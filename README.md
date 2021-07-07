@@ -43,7 +43,7 @@ Example file:
 
 ```toml
 [[backup.targz]]
-  paths = ["/home/neck/hello.txt"]
+  paths = ["/home/neck/influxd"]
   # Time format to be used in the backup file names (https://golang.org/pkg/time/#Time)
   # Default is layoutISO = "2006-01-02"
 
