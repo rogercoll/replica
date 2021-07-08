@@ -95,6 +95,7 @@ func (t *TarGz) Do() ([]string, error) {
 	for i, aPath := range t.Paths {
 		aPath := aPath
 		i := i
+		//should be change to track all file errors
 		g.Go(func() error {
 			var buf bytes.Buffer
 			err := compress(aPath, &buf)
