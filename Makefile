@@ -11,6 +11,11 @@ build:
 	@echo "  >  Building binary..."
 	go build $(LDFLAGS) ./cmd/replica
 
+## build: Complie Golang files
+build-arm:
+	@echo "  >  Building arm 32bit binary..."
+	env GOOS=linux GOARCH=arm go build $(LDFLAGS) ./cmd/replica
+
 ## print-filters: Print filters
 print-plugins:
 	./replica -sample-config -dist-filter "ssh:local" -bck-filter "targz"
