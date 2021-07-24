@@ -36,7 +36,7 @@ func (l *Local) Description() string {
 	return "Store backupfiles to a local directories"
 }
 
-func (l *Local) Save(files []string) (int64, error) {
+func (l *Local) Save(files []replica.Backup) (int64, error) {
 	var total int64
 	for _, file := range files {
 		var wg sync.WaitGroup
@@ -44,17 +44,12 @@ func (l *Local) Save(files []string) (int64, error) {
 			wg.Add(1)
 			go func(ldir string) {
 				defer wg.Done()
-				newFile, err := os.Create(ldir + path.Base(file))
+				newFile, err := os.Create(ldir + path.Base(file.Name()))
 				if err != nil {
 					log.Fatal(err)
 				}
 				defer newFile.Close()
-				oldFile, err := os.Open(file)
-				if err != nil {
-					log.Fatal(err)
-				}
-				defer oldFile.Close()
-				bytesCopied, err := io.Copy(newFile, oldFile)
+				bytesCopied, err := io.Copy(newFile, file.Data())
 				if err != nil {
 					log.Fatal(err)
 				}

@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/rogercoll/replica"
 	"github.com/rogercoll/replica/config"
 	"github.com/rogercoll/replica/models"
 )
@@ -25,18 +26,22 @@ func NewController(config *config.Config) (*Controller, error) {
 func (c *Controller) Run(ctx context.Context) error {
 	var wg sync.WaitGroup
 	//all backupfilters must be different to prevent data race
-	backupFiles := make(map[string][]string, len(c.Config.Backups))
+	backupFiles := make(map[string][]replica.Backup, len(c.Config.Backups))
 	for _, running := range c.Config.Backups {
 		//create logger with with filed of the backup name
 		wg.Add(1)
 		//contoller could have already consumed them
 		go func() {
 			defer wg.Done()
-			files, err := running.Backup.Do()
-			if err != nil {
-				log.Println(err)
-			} else {
-				backupFiles[running.Name] = files
+			results := make(chan replica.Backup)
+			go running.Backup.Do(results)
+			//read until channel is closed by the backup
+			for result := range results {
+				if result.Error() != nil {
+					log.Println(result.Error())
+				} else {
+					backupFiles[running.Name] = append(backupFiles[running.Name], result)
+				}
 			}
 		}()
 	}

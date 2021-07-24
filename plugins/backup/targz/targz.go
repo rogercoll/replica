@@ -89,7 +89,7 @@ func compress(src string, buf io.Writer) error {
 	}
 	return nil
 }
-func (t *TarGz) Do() ([]string, error) {
+func (t *TarGz) Do(results <-chan replica.Backup) {
 	backups := make([]string, len(t.Paths))
 	g := new(errgroup.Group)
 	for i, aPath := range t.Paths {
@@ -117,12 +117,15 @@ func (t *TarGz) Do() ([]string, error) {
 			return nil
 		})
 	}
-	err := g.Wait()
-	return backups, err
+	//err := g.Wait()
+}
+
+func (t *TarGz) Clean() {
+
 }
 
 func init() {
-	backup.Add("targz", func() replica.Backup {
+	backup.Add("targz", func() replica.BackupSystem {
 		return &TarGz{TimeFormat: "2006-01-02"}
 	})
 }

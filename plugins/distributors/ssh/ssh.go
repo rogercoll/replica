@@ -45,7 +45,7 @@ func parsePath(path string) string {
 	return strings.Replace(path, "//", "/", -1)
 }
 
-func (s *SSH) Save(files []string) (int64, error) {
+func (s *SSH) Save(files []replica.Backup) (int64, error) {
 	var totalBytes int64
 	if len(s.Hosts) != len(s.Destinations) {
 		return 0, errors.New("Invalid configuration")
@@ -80,22 +80,15 @@ func (s *SSH) Save(files []string) (int64, error) {
 		}
 		defer sftp.Close()
 		for _, fileName := range files {
-			// Open the source file
-			srcFile, err := os.Open(parsePath(fileName))
-			if err != nil {
-				return 0, err
-			}
-			defer srcFile.Close()
-
 			// Create the destination file
-			dstFile, err := sftp.Create(parsePath(s.Destinations[i] + path.Base(fileName)))
+			dstFile, err := sftp.Create(parsePath(s.Destinations[i] + path.Base(fileName.Name())))
 			if err != nil {
 				return 0, err
 			}
 			defer dstFile.Close()
 
 			// write to file
-			n, err := dstFile.ReadFrom(srcFile)
+			n, err := dstFile.ReadFrom(fileName.Data())
 			if err != nil {
 				fmt.Println("heldfjasjfkldas")
 				return 0, err
